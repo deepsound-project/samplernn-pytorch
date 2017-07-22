@@ -3,7 +3,7 @@ from torch import nn
 import numpy as np
 
 
-EPSILON = 1e-5
+EPSILON = 1e-2
 
 def linear_quantize(samples, q_levels):
     samples = samples.clone()
