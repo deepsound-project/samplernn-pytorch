@@ -23,7 +23,7 @@ You can also prepare a dataset yourself. It should be a directory in `datasets/`
 
 ## Training
 
-To train the model you need to run `train.py`. All model hyperparameters are settable in the command line. Most hyperparameters have sensible default values, so you don't need to provide all od them. Run `python train.py -h` for details. To train on the `piano` dataset using the best hyperparameters we've found, run:
+To train the model you need to run `train.py`. All model hyperparameters are settable in the command line. Most hyperparameters have sensible default values, so you don't need to provide all of them. Run `python train.py -h` for details. To train on the `piano` dataset using the best hyperparameters we've found, run:
 
 ```
 python train.py --exp TEST --frame_sizes 16 4 --n_rnn 2 --dataset piano
