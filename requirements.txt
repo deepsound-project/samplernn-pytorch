@@ -1,0 +1,4 @@
+librosa==0.5.1
+matplotlib==2.1.0
+natsort==5.1.0
+torch==0.2.0.post3
