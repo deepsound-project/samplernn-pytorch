@@ -58,7 +58,7 @@ class DataLoader(DataLoaderBase):
                 to_index = seq_begin + self.seq_len
                 sequences = batch[:, from_index : to_index]
                 input_sequences = sequences[:, : -1]
-                target_sequences = sequences[:, self.overlap_len :]
+                target_sequences = sequences[:, self.overlap_len :].contiguous()
 
                 yield (input_sequences, reset, target_sequences)
 
