@@ -30,3 +30,5 @@ python train.py --exp TEST --frame_sizes 16 4 --n_rnn 2 --dataset piano
 ```
 
 The results - training log, loss plots, model checkpoints and generated samples will be saved in `results/`.
+
+We also have an option to monitor the metrics using [CometML](https://www.comet.ml/). To use it, just pass your API key as `--comet_key` parameter to `train.py`.
