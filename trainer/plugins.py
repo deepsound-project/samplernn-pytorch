@@ -5,11 +5,12 @@ from model import Generator
 
 import torch
 from torch.autograd import Variable
-from torch.utils.trainer.plugins.plugin import Plugin
-from torch.utils.trainer.plugins.monitor import Monitor
-from torch.utils.trainer.plugins import LossMonitor
+from trainer.trainer_plugins.plugin import Plugin
+from trainer.trainer_plugins.monitor import Monitor
+from trainer.trainer_plugins.loss import LossMonitor
 
-from librosa.output import write_wav
+# from librosa.output import write_wav
+import soundfile as sf
 from matplotlib import pyplot
 
 from glob import glob
@@ -57,19 +58,20 @@ class ValidationPlugin(Plugin):
 
             def wrap(input):
                 if torch.is_tensor(input):
-                    input = Variable(input, volatile=True)
+                    with torch.no_grad():
+                        input = Variable(input)
                     if self.trainer.cuda:
                         input = input.cuda()
                 return input
             batch_inputs = list(map(wrap, batch_inputs))
-
-            batch_target = Variable(batch_target, volatile=True)
+            with torch.no_grad():
+                batch_target = Variable(batch_target)
             if self.trainer.cuda:
                 batch_target = batch_target.cuda()
 
             batch_output = self.trainer.model(*batch_inputs)
-            loss_sum += self.trainer.criterion(batch_output, batch_target) \
-                                    .data[0] * batch_size
+            loss_sum += self.trainer.criterion(batch_output, batch_target) * batch_size
+            print(loss_sum, batch_size)
 
             n_examples += batch_size
 
@@ -157,7 +159,7 @@ class GeneratorPlugin(Plugin):
         samples = self.generate(self.n_samples, self.sample_length) \
                       .cpu().float().numpy()
         for i in range(self.n_samples):
-            write_wav(
+            sf.write(
                 os.path.join(
                     self.samples_path, self.pattern.format(epoch_index, i + 1)
                 ),

@@ -92,3 +92,8 @@ ENV/
 *~
 *.swp
 *.swo
+
+.vscode
+*.out
+datasets
+results
