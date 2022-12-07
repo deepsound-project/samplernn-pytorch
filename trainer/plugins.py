@@ -12,6 +12,7 @@ from trainer.trainer_plugins.loss import LossMonitor
 # from librosa.output import write_wav
 import soundfile as sf
 from matplotlib import pyplot
+from librosa.util import normalize
 
 from glob import glob
 import os
@@ -155,11 +156,12 @@ class GeneratorPlugin(Plugin):
         samples = self.generate(self.n_samples, self.sample_length) \
                       .cpu().float().numpy()
         for i in range(self.n_samples):
+            sample_norm = normalize(samples[i, :], axis=0)
             sf.write(
                 os.path.join(
                     self.samples_path, self.pattern.format(epoch_index, i + 1)
                 ),
-                samples[i, :], self.sample_rate #, norm=True
+                sample_norm, self.sample_rate
             )
 
 
