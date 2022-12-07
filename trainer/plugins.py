@@ -159,8 +159,9 @@ class GeneratorPlugin(Plugin):
                 os.path.join(
                     self.samples_path, self.pattern.format(epoch_index, i + 1)
                 ),
-                samples[i, :], sr=self.sample_rate, norm=True
+                samples[i, :], self.sample_rate #, norm=True
             )
+
 
 
 class StatsPlugin(Plugin):
@@ -240,9 +241,9 @@ class StatsPlugin(Plugin):
                 else:
                     part_name = 'epochs'
 
-                xs = self.data[part_name][x_field]
-                ys = self.data[part_name][y_field]
-
+                xs = self._to_cpu(self.data[part_name][x_field])
+                ys = self._to_cpu(self.data[part_name][y_field])
+                
                 pyplot.plot(xs, ys, format, label=label)
 
             if 'log_y' in info and info['log_y']:
@@ -252,6 +253,15 @@ class StatsPlugin(Plugin):
             pyplot.savefig(
                 os.path.join(self.results_path, self.plot_pattern.format(name))
             )
+
+    def _to_cpu(self, xs):
+        xs_ = list()
+        for element in xs:
+            if type(element) == torch.Tensor:
+                xs_.append(element.cpu())
+            else:
+                xs_.append(element)
+        return xs_
 
     @staticmethod
     def _field_to_pair(field):
