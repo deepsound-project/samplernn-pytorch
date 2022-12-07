@@ -246,7 +246,7 @@ class Generator(Runner):
 
     def __call__(self, n_seqs, seq_len):
         # generation doesn't work with CUDNN for some reason
-        torch.backends.cudnn.enabled = False
+        torch.backends.cudnn.enabled = True
 
         self.reset_hidden_states()
 

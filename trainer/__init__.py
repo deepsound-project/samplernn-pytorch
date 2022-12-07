@@ -98,3 +98,4 @@ class Trainer(object):
                 *plugin_data
             )
             self.call_plugins('update', self.iterations, self.model)
+            break
