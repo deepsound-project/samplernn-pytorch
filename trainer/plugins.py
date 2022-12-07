@@ -54,27 +54,20 @@ class ValidationPlugin(Plugin):
         n_examples = 0
         for data in dataset:
             torch.cuda.empty_cache()
-            batch_inputs = data[: -1]
+            batch_inputs = list(data[: -1])
             batch_target = data[-1]
             batch_size = batch_target.size()[0]
-
-            def wrap(input):
-                if torch.is_tensor(input):
-                    with torch.no_grad():
-                        input = Variable(input)
-                        if self.trainer.cuda:
-                            input = input.cuda()
-                return input
-            batch_inputs = list(map(wrap, batch_inputs))
-
+            
+            batch_inputs[0] = batch_inputs[0].cuda() if self.trainer.cuda else batch_inputs[0]
 
             with torch.no_grad():
                 batch_target = Variable(batch_target)
                 if self.trainer.cuda:
                     batch_target = batch_target.cuda()
 
+
             batch_output = self.trainer.model(*batch_inputs)
-            loss_sum += self.trainer.criterion(batch_output, batch_target) * batch_size
+            loss_sum += (self.trainer.criterion(batch_output, batch_target) * batch_size).data
 
             n_examples += batch_size
 
