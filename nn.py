@@ -28,7 +28,7 @@ class LearnedUpsampling1d(nn.Module):
 
     def reset_parameters(self):
         self.conv_t.reset_parameters()
-        nn.init.constant(self.bias, 0)
+        nn.init.constant_(self.bias, 0)
 
     def forward(self, input):
         (batch_size, _, length) = input.size()
@@ -45,7 +45,7 @@ class LearnedUpsampling1d(nn.Module):
 
 def lecun_uniform(tensor):
     fan_in = nn.init._calculate_correct_fan(tensor, 'fan_in')
-    nn.init.uniform(tensor, -math.sqrt(3 / fan_in), math.sqrt(3 / fan_in))
+    nn.init.uniform_(tensor, -math.sqrt(3 / fan_in), math.sqrt(3 / fan_in))
 
 
 def concat_init(tensor, inits):

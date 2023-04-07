@@ -5,12 +5,14 @@ from model import Generator
 
 import torch
 from torch.autograd import Variable
-from torch.utils.trainer.plugins.plugin import Plugin
-from torch.utils.trainer.plugins.monitor import Monitor
-from torch.utils.trainer.plugins import LossMonitor
+from trainer.trainer_plugins.plugin import Plugin
+from trainer.trainer_plugins.monitor import Monitor
+from trainer.trainer_plugins.loss import LossMonitor
 
-from librosa.output import write_wav
+# from librosa.output import write_wav
+import soundfile as sf
 from matplotlib import pyplot
+from librosa.util import normalize
 
 from glob import glob
 import os
@@ -38,38 +40,35 @@ class ValidationPlugin(Plugin):
         test_stats['log_epoch_fields'] = ['{last:.4f}']
 
     def epoch(self, idx):
+        
         self.trainer.model.eval()
 
         val_stats = self.trainer.stats.setdefault('validation_loss', {})
         val_stats['last'] = self._evaluate(self.val_dataset)
         test_stats = self.trainer.stats.setdefault('test_loss', {})
         test_stats['last'] = self._evaluate(self.test_dataset)
-
+        torch.cuda.empty_cache()
         self.trainer.model.train()
 
     def _evaluate(self, dataset):
         loss_sum = 0
         n_examples = 0
         for data in dataset:
-            batch_inputs = data[: -1]
+            torch.cuda.empty_cache()
+            batch_inputs = list(data[: -1])
             batch_target = data[-1]
             batch_size = batch_target.size()[0]
+            
+            batch_inputs[0] = batch_inputs[0].cuda() if self.trainer.cuda else batch_inputs[0]
 
-            def wrap(input):
-                if torch.is_tensor(input):
-                    input = Variable(input, volatile=True)
-                    if self.trainer.cuda:
-                        input = input.cuda()
-                return input
-            batch_inputs = list(map(wrap, batch_inputs))
+            with torch.no_grad():
+                batch_target = Variable(batch_target)
+                if self.trainer.cuda:
+                    batch_target = batch_target.cuda()
 
-            batch_target = Variable(batch_target, volatile=True)
-            if self.trainer.cuda:
-                batch_target = batch_target.cuda()
 
             batch_output = self.trainer.model(*batch_inputs)
-            loss_sum += self.trainer.criterion(batch_output, batch_target) \
-                                    .data[0] * batch_size
+            loss_sum += (self.trainer.criterion(batch_output, batch_target) * batch_size).data
 
             n_examples += batch_size
 
@@ -157,12 +156,14 @@ class GeneratorPlugin(Plugin):
         samples = self.generate(self.n_samples, self.sample_length) \
                       .cpu().float().numpy()
         for i in range(self.n_samples):
-            write_wav(
+            sample_norm = normalize(samples[i, :], axis=0)
+            sf.write(
                 os.path.join(
                     self.samples_path, self.pattern.format(epoch_index, i + 1)
                 ),
-                samples[i, :], sr=self.sample_rate, norm=True
+                sample_norm, self.sample_rate
             )
+
 
 
 class StatsPlugin(Plugin):
@@ -242,9 +243,9 @@ class StatsPlugin(Plugin):
                 else:
                     part_name = 'epochs'
 
-                xs = self.data[part_name][x_field]
-                ys = self.data[part_name][y_field]
-
+                xs = self._to_cpu(self.data[part_name][x_field])
+                ys = self._to_cpu(self.data[part_name][y_field])
+                
                 pyplot.plot(xs, ys, format, label=label)
 
             if 'log_y' in info and info['log_y']:
@@ -254,6 +255,15 @@ class StatsPlugin(Plugin):
             pyplot.savefig(
                 os.path.join(self.results_path, self.plot_pattern.format(name))
             )
+
+    def _to_cpu(self, xs):
+        xs_ = list()
+        for element in xs:
+            if type(element) == torch.Tensor:
+                xs_.append(element.cpu())
+            else:
+                xs_.append(element)
+        return xs_
 
     @staticmethod
     def _field_to_pair(field):

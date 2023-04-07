@@ -15,7 +15,8 @@ from trainer.plugins import (
 from dataset import FolderDataset, DataLoader
 
 import torch
-from torch.utils.trainer.plugins import Logger
+
+from trainer.trainer_plugins.logger import Logger
 
 from natsort import natsorted
 
